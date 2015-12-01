@@ -1,5 +1,6 @@
 # Bear Bouncer - Serveur d'identification
 
+by Ran Bao & Anthony Pena
 
 
 ## création d'un token
