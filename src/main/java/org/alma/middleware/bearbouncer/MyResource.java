@@ -39,8 +39,14 @@ public class MyResource {
 			if(identity != null) {
 				status = HttpServletResponse.SC_OK;
 				String token = UUID.randomUUID().toString();
-				db.putToken(token,req.getImei());
-				res = new TokenResponse(token,"sdfd");
+				String callback = db.getCallback(req.getApikey());
+				if(callback != null) {
+					db.putToken(token,req.getImei());
+					res = new TokenResponse(token,callback);
+				} else {
+					status = HttpServletResponse.SC_BAD_REQUEST;
+					res = new ErrorMsg("ApiKey '"+req.getApikey()+"' does not exist.");
+				}
 			} else {
 				status = HttpServletResponse.SC_NOT_FOUND;
 				res = new ErrorMsg("No identity corresponds to IMEI '"+req.getImei()+"'");

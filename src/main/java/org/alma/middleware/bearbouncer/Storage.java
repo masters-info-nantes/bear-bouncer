@@ -5,15 +5,18 @@ import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Map;
 import org.mapdb.*;
+import org.alma.middleware.bearbouncer.beans.Identity;
 
 public class Storage {
 	
 	private static final String MAP_IDENTITIES = "identities";
 	private static final String MAP_TOKENS = "tokens";
+	private static final String MAP_CALLBACKS = "callbacks";
 	
 	private DB db;
 	private Map<String,Identity> identities;
 	private Map<String,TimeoutString> tokens;
+	private Map<String,String> callbacks;
 	
 	public Storage() {
 		this.db = DBMaker.fileDB(new File("storage.db"))
@@ -35,6 +38,13 @@ public class Storage {
 				.keySerializer(Serializer.STRING)
 				.makeOrGet();
 		}
+		if(this.db.exists(MAP_CALLBACKS)) {
+			this.callbacks = this.db.treeMap(MAP_CALLBACKS);
+		} else {
+			this.callbacks = this.db.treeMapCreate(MAP_CALLBACKS)
+				.keySerializer(Serializer.STRING)
+				.makeOrGet();
+		}
 		
 		// TODO remove following lines
 		this.putIdentity(
@@ -43,6 +53,10 @@ public class Storage {
 				"John",
 				"Doe"
 			)
+		);
+		this.callbacks.put(
+			"bb9dd8fb-98fb-40d7-914a-7ff2cc06cff9",
+			"/startSession"
 		);
 	}
 	
@@ -85,6 +99,14 @@ public class Storage {
 			}
 		}
 		return null;
+	}
+	
+	public String getCallback(String apikey) {
+		return this.callbacks.get(apikey);
+	}
+	
+	public String putCallback(String apikey, String callback) {
+		return this.callbacks.put(apikey,callback);
 	}
 	
 	public void close() {

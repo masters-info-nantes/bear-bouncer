@@ -1,4 +1,4 @@
-package org.alma.middleware.bearbouncer;
+package org.alma.middleware.bearbouncer.beans;
 
 import java.io.Serializable;
 
