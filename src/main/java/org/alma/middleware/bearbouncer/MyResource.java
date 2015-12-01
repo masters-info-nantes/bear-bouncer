@@ -1,6 +1,7 @@
 package org.alma.middleware.bearbouncer;
 
 import java.util.UUID;
+import javax.json.JsonObject;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -13,6 +14,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import com.google.gson.Gson;
+import org.alma.middleware.bearbouncer.beans.*;
 
 /**
  * Root resource (exposed at "myresource" path)
@@ -25,63 +27,63 @@ public class MyResource {
 
 	@POST
 	@Path("auth")
-	@Consumes(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response auth(String imei) {
+	public Response auth(IMEIRequest req) {
 		Storage db = new Storage();
 		
 		int status = 200;
-		String res = null;
-		if(imei.matches(REGEX_IMEI)) {
-			Identity identity = db.getIdentity(imei);
+		Object res = null;
+		if(req.getImei().matches(REGEX_IMEI)) {
+			Identity identity = db.getIdentity(req.getImei());
 			if(identity != null) {
 				status = HttpServletResponse.SC_OK;
-				res = UUID.randomUUID().toString();
-				db.putToken(res,imei);
+				String token = UUID.randomUUID().toString();
+				db.putToken(token,req.getImei());
+				res = new TokenResponse(token,"sdfd");
 			} else {
 				status = HttpServletResponse.SC_NOT_FOUND;
-				res = "No identity corresponds to IMEI '"+imei+"'";
+				res = new ErrorMsg("No identity corresponds to IMEI '"+req.getImei()+"'");
 			}
 		} else {
 			status = HttpServletResponse.SC_BAD_REQUEST;
-			res = "Content is not a well formed IMEI.";
+			res = new ErrorMsg("Content is not a well formed IMEI.");
 		}
 		db.close();
 		return Response
 			.status(status)
-			.type(MediaType.TEXT_PLAIN)
+			.type(MediaType.APPLICATION_JSON)
 			.entity(res)
 			.build();
 	}
 
 	@POST
 	@Path("token")
-	@Consumes(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response token(String token) {
+	public Response token(TokenRequest req) {
 		Storage db = new Storage();
 		
 		int status = 200;
-		String res = null;
-		if(token.matches(REGEX_UUID)) {
-			String imei = db.getImei(token);
+		Object res = null;
+		if(req.getToken().matches(REGEX_UUID)) {
+			String imei = db.getImei(req.getToken());
 			if(imei != null) {
 				Identity identity = db.getIdentity(imei);
 				status = HttpServletResponse.SC_OK;
-				Gson gson = new Gson();
-				res = gson.toJson(identity);
+				res = identity;
 			} else {
 				status = HttpServletResponse.SC_NOT_FOUND;
-				res = "Not a valid or existing token.";
+				res = new ErrorMsg("Not a valid or existing token.");
 			}
 		} else {
 			status = HttpServletResponse.SC_BAD_REQUEST;
-			res = "Content is not a well formed token.";
+			res = new ErrorMsg("Content is not a well formed token.");
 		}
 		db.close();
 		return Response
 			.status(status)
-			.type(MediaType.TEXT_PLAIN)
+			.type(MediaType.APPLICATION_JSON)
 			.entity(res)
 			.build();
 	}
