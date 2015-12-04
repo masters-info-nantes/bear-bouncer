@@ -2,3 +2,4 @@
 *.jar
 target/*
 *.db
+client/target/*
